@@ -174,7 +174,7 @@ export const like = async (req: Request, res: Response) => {
 
   const blog: ResponseBlogProps | null = await Blog.findOne({ slug });
   if (!blog) {
-    return returnErrorMessage(res, { message: "not found" }, 400);
+    return returnErrorMessage(res, { message: "blog not found" }, 400);
   }
 
   try {
@@ -189,7 +189,7 @@ export const like = async (req: Request, res: Response) => {
 
     return returnSuccessMessage(
       res,
-      { message: "Blog is successfully liked" },
+      { message: "blog is successfully liked" },
       201
     );
   } catch (error) {
