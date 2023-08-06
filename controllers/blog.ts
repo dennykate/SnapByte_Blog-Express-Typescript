@@ -8,8 +8,9 @@ import {
   returnErrorMessage,
   returnSuccessMessage,
 } from "../utils/functions";
-import { BlogProps, ResponseBlogProps } from "../types";
+import { BlogProps, ResponseBlogProps, ResponseUserProps } from "../types";
 import BlogResource from "../resources/blog-resource";
+import AuthMiddleware from "../middlewares/AuthMiddleware";
 
 export const store = async (req: Request, res: Response) => {
   const errors = validationResult(req);
@@ -32,7 +33,7 @@ export const store = async (req: Request, res: Response) => {
       created_at,
     });
 
-    const blogResource = new BlogResource(newBlog);
+    const blogResource = new BlogResource(newBlog, req);
 
     return returnSuccessMessage(res, {
       data: blogResource.show(),
@@ -85,7 +86,8 @@ export const index = async (req: Request, res: Response) => {
       blogs = await Blog.find(filter).sort({ _id: -1 }).skip(skip).limit(limit);
     }
 
-    const blogResource = new BlogResource();
+    const blogResource = new BlogResource({}, req);
+    await blogResource.setLikedUser();
 
     return returnSuccessMessage(res, {
       meta: {
@@ -112,7 +114,8 @@ export const show = async (req: Request, res: Response) => {
 
   const views = blog.views == undefined ? 0 : blog.views + 1;
   await Blog.findOneAndUpdate({ slug }, { views: views + 1 }, { new: true });
-  const blogResource = new BlogResource(blog);
+  const blogResource = new BlogResource(blog, req);
+  await blogResource.setLikedUser();
 
   return returnSuccessMessage(res, { data: blogResource.show() });
 };
@@ -130,7 +133,7 @@ export const update = async (req: Request, res: Response) => {
       new: true,
     });
 
-    const blogResource = new BlogResource(blog);
+    const blogResource = new BlogResource(blog, req);
 
     return returnSuccessMessage(res, {
       message: "blog is successfully updated",
@@ -163,14 +166,18 @@ export const destroy = async (req: Request, res: Response) => {
 export const related = async (req: Request, res: Response) => {
   const relatedBlogs = await Blog.find().sort({ _id: -1 }).limit(3);
 
-  const blogResource = new BlogResource(relatedBlogs[0]);
+  const blogResource = new BlogResource({}, req);
+  await blogResource.setLikedUser();
+
   return returnSuccessMessage(res, {
     data: blogResource.all(relatedBlogs),
   });
 };
 
 export const like = async (req: Request, res: Response) => {
-  const { slug, user } = req.body;
+  const { slug } = req.body;
+  const Auth = new AuthMiddleware(req);
+  const user: ResponseUserProps = await Auth.isAuthenticatedUser();
 
   const blog: ResponseBlogProps | null = await Blog.findOne({ slug });
   if (!blog) {
@@ -178,7 +185,7 @@ export const like = async (req: Request, res: Response) => {
   }
 
   try {
-    const likes = blog.likes ? [...blog.likes, user.id] : [];
+    const likes = blog.likes ? [...blog.likes, user._id] : [];
     await Blog.findOneAndUpdate(
       { slug },
       {

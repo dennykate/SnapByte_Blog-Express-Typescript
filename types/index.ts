@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { type } from "os";
 
 export interface UploadByProps {
   name: string;
@@ -23,5 +24,14 @@ export interface ResponseBlogProps {
   __v?: number;
   created_at?: string;
   views?: number;
-  likes?: ObjectId[];
+  likes?: string[];
+}
+
+export interface ResponseUserProps {
+  _id?: ObjectId;
+  name?: string;
+  email?: string;
+  password?: string;
+  profile?: string;
+  __v?: string;
 }

@@ -69,9 +69,11 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             return (0, functions_1.returnErrorMessage)(res, { message: "user not found" });
         }
         jsonwebtoken_1.default.sign({
+            _id: user._id,
             name: user.name,
             email: user.email,
-        }, SECRET, { expiresIn: 60 * 60 }, (err, token) => {
+            password: hashedPassword,
+        }, SECRET, { expiresIn: 60 * 24 }, (err, token) => {
             if (err) {
                 return (0, functions_1.returnErrorMessage)(res, { message: "user not found" });
             }

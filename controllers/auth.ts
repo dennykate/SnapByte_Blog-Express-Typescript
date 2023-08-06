@@ -72,11 +72,13 @@ export const login = async (req: Request, res: Response) => {
 
     jwt.sign(
       {
+        _id: user._id,
         name: user.name,
         email: user.email,
+        password: hashedPassword,
       },
       SECRET,
-      { expiresIn: 60 * 60 },
+      { expiresIn: 60 * 24 },
       (err, token) => {
         if (err) {
           return returnErrorMessage(res, { message: "user not found" });

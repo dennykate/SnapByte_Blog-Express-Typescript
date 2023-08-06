@@ -17,6 +17,7 @@ const express_validator_1 = require("express-validator");
 const blog_1 = __importDefault(require("../models/blog"));
 const functions_1 = require("../utils/functions");
 const blog_resource_1 = __importDefault(require("../resources/blog-resource"));
+const AuthMiddleware_1 = __importDefault(require("../middlewares/AuthMiddleware"));
 const store = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const errors = (0, express_validator_1.validationResult)(req);
     if (!errors.isEmpty()) {
@@ -34,7 +35,7 @@ const store = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             upload_by,
             created_at,
         });
-        const blogResource = new blog_resource_1.default(newBlog);
+        const blogResource = new blog_resource_1.default(newBlog, req);
         return (0, functions_1.returnSuccessMessage)(res, {
             data: blogResource.show(),
             message: "blog is created successfully",
@@ -84,7 +85,8 @@ const index = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             totalBlogs = yield blog_1.default.find();
             blogs = yield blog_1.default.find(filter).sort({ _id: -1 }).skip(skip).limit(limit);
         }
-        const blogResource = new blog_resource_1.default();
+        const blogResource = new blog_resource_1.default({}, req);
+        yield blogResource.setLikedUser();
         return (0, functions_1.returnSuccessMessage)(res, {
             meta: {
                 filter,
@@ -109,7 +111,8 @@ const show = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     const views = blog.views == undefined ? 0 : blog.views + 1;
     yield blog_1.default.findOneAndUpdate({ slug }, { views: views + 1 }, { new: true });
-    const blogResource = new blog_resource_1.default(blog);
+    const blogResource = new blog_resource_1.default(blog, req);
+    yield blogResource.setLikedUser();
     return (0, functions_1.returnSuccessMessage)(res, { data: blogResource.show() });
 });
 exports.show = show;
@@ -123,7 +126,7 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const blog = yield blog_1.default.findOneAndUpdate({ slug }, req.body, {
             new: true,
         });
-        const blogResource = new blog_resource_1.default(blog);
+        const blogResource = new blog_resource_1.default(blog, req);
         return (0, functions_1.returnSuccessMessage)(res, {
             message: "blog is successfully updated",
             data: blogResource.update(),
@@ -153,24 +156,27 @@ const destroy = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 exports.destroy = destroy;
 const related = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const relatedBlogs = yield blog_1.default.find().sort({ _id: -1 }).limit(3);
-    const blogResource = new blog_resource_1.default(relatedBlogs[0]);
+    const blogResource = new blog_resource_1.default({}, req);
+    yield blogResource.setLikedUser();
     return (0, functions_1.returnSuccessMessage)(res, {
         data: blogResource.all(relatedBlogs),
     });
 });
 exports.related = related;
 const like = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { slug, user } = req.body;
+    const { slug } = req.body;
+    const Auth = new AuthMiddleware_1.default(req);
+    const user = yield Auth.isAuthenticatedUser();
     const blog = yield blog_1.default.findOne({ slug });
     if (!blog) {
-        return (0, functions_1.returnErrorMessage)(res, { message: "not found" }, 400);
+        return (0, functions_1.returnErrorMessage)(res, { message: "blog not found" }, 400);
     }
     try {
-        const likes = blog.likes ? [...blog.likes, user.id] : [];
+        const likes = blog.likes ? [...blog.likes, user._id] : [];
         yield blog_1.default.findOneAndUpdate({ slug }, {
             likes,
         }, { new: true });
-        return (0, functions_1.returnSuccessMessage)(res, { message: "Blog is successfully liked" }, 201);
+        return (0, functions_1.returnSuccessMessage)(res, { message: "blog is successfully liked" }, 201);
     }
     catch (error) {
         return (0, functions_1.returnErrorMessage)(res, { message: "fail to like" });
