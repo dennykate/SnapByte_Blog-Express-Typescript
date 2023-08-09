@@ -47,11 +47,11 @@ export const store = async (req: Request, res: Response) => {
 export const index = async (req: Request, res: Response) => {
   const options = req.query;
 
-  const filter = (options.filter as object | undefined) || {};
-  const page = (options.page as number | undefined) || 1;
-  const limit = 10;
-  const skip = (page - 1) * limit;
-  const search = (options.search as string | undefined) || "";
+  const filter: object = (options.filter as object | undefined) || {};
+  const page: number = (options.page as number | undefined) || 1;
+  const limit: number = 9;
+  const skip: number = (page - 1) * limit;
+  const search: string = (options.search as string | undefined) || "";
 
   try {
     let totalBlogs;
@@ -100,6 +100,8 @@ export const index = async (req: Request, res: Response) => {
       data: blogResource.all(blogs),
     });
   } catch (error) {
+    console.log(error);
+
     return returnErrorMessage(res, { message: "server error" }, 500);
   }
 };
@@ -152,6 +154,16 @@ export const destroy = async (req: Request, res: Response) => {
     return returnErrorMessage(res, { message: "not found" }, 400);
   }
 
+  const Auth = new AuthMiddleware(req);
+  const user: ResponseUserProps = await Auth.isAuthenticatedUser();
+  const isAuthorizedUser: boolean = Auth.isAuthorizedUser(
+    isExistedBlog.upload_by?.id as string
+  );
+
+  if (!isAuthorizedUser) {
+    return returnErrorMessage(res, { message: "you're unauthorized" }, 400);
+  }
+
   try {
     await Blog.findOneAndDelete({ slug });
 
@@ -185,7 +197,9 @@ export const like = async (req: Request, res: Response) => {
   }
 
   try {
-    const likes = blog.likes ? [...blog.likes, user._id] : [];
+    const likes = blog.likes ? [...blog.likes, user.id] : [];
+    console.log(likes);
+
     await Blog.findOneAndUpdate(
       { slug },
       {
@@ -201,5 +215,67 @@ export const like = async (req: Request, res: Response) => {
     );
   } catch (error) {
     return returnErrorMessage(res, { message: "fail to like" });
+  }
+};
+
+export const dislike = async (req: Request, res: Response) => {
+  const { slug } = req.body;
+  const Auth = new AuthMiddleware(req);
+  const user: ResponseUserProps = await Auth.isAuthenticatedUser();
+
+  const blog: ResponseBlogProps | null = await Blog.findOne({ slug });
+  if (!blog) {
+    return returnErrorMessage(res, { message: "blog not found" }, 400);
+  }
+
+  try {
+    const likes = blog.likes
+      ? blog.likes?.filter((like) => like.toString() != user.id)
+      : [];
+
+    await Blog.findOneAndUpdate(
+      { slug },
+      {
+        likes,
+      },
+      { new: true }
+    );
+
+    return returnSuccessMessage(
+      res,
+      { message: "blog is successfully disliked" },
+      201
+    );
+  } catch (error) {
+    return returnErrorMessage(res, { message: "fail to like" });
+  }
+};
+
+export const profile = async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const options = req.query;
+
+  const page: number = (options.page as number | undefined) || 1;
+  const limit: number = 9;
+  const skip: number = (page - 1) * limit;
+
+  try {
+    const totalBlogs: BlogProps[] = await Blog.find({
+      "upload_by.id": id,
+    });
+    const blogs: BlogProps[] = await Blog.find({
+      "upload_by.id": id,
+    })
+      .skip(skip)
+      .limit(limit);
+
+    const blogResource = new BlogResource({}, req);
+
+    return returnSuccessMessage(res, {
+      meta: { total: totalBlogs.length, page, limit, skip },
+      data: blogResource.all(blogs),
+    });
+  } catch (error) {
+    return returnErrorMessage(res, { message: "server error" }, 500);
   }
 };

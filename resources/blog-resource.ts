@@ -48,7 +48,7 @@ class BlogResource {
 
   private islikedUser(likes: string[] = []) {
     const isExist = likes.find((like) => {
-      if (like) return like.toString() == this.user._id?.toString();
+      if (like) return like == this.user.id;
       else return false;
     });
 

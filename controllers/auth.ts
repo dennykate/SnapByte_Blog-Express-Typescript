@@ -23,7 +23,6 @@ export const register = async (req: Request, res: Response) => {
 
     if (password != password_confirmation) {
       return returnErrorMessage(res, { message: "passwords doesn't match" });
-      ``;
     }
 
     const isExistEmail = await Auth.findOne({ email });
@@ -36,6 +35,13 @@ export const register = async (req: Request, res: Response) => {
       .createHash("md5")
       .update(req.body.password)
       .digest("hex");
+
+    console.log({
+      name,
+      email,
+      password: hashedPassword,
+      profile,
+    });
 
     await Auth.create({
       name,
@@ -72,7 +78,7 @@ export const login = async (req: Request, res: Response) => {
 
     jwt.sign(
       {
-        _id: user._id,
+        id: user._id,
         name: user.name,
         email: user.email,
         password: hashedPassword,

@@ -19,6 +19,7 @@ const SECRET = process.env.SECRET;
 class AuthMiddleware {
     constructor(request) {
         this.token = "";
+        this.user = {};
         const header = request.headers["authorization"];
         if (!header)
             return;
@@ -27,22 +28,29 @@ class AuthMiddleware {
             return;
         this.token = token;
     }
+    getToken(request) {
+        const header = request.headers["authorization"];
+        if (!header)
+            return undefined;
+        const [type, token] = header.split(" ");
+        if (type !== "Bearer")
+            return undefined;
+        return token;
+    }
     isAuthenticatedUser() {
         return jsonwebtoken_1.default.verify(this.token, SECRET, (err, data) => __awaiter(this, void 0, void 0, function* () {
             if (err) {
                 return undefined;
             }
-            // const isAdmin = await Auth.findOne({
-            //   email: data.email,
-            //   password: data.password,
-            // });
-            // if (!isAdmin) {
-            //   return undefined;
-            // } else {
-            //   return isAdmin;
-            // }
+            this.user = data;
             return data;
         }));
+    }
+    isAuthorizedUser(id) {
+        if (id == this.user.id)
+            return true;
+        else
+            return false;
     }
 }
 exports.default = AuthMiddleware;

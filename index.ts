@@ -6,6 +6,9 @@ import cors from "cors";
 
 import AuthRoutes from "./routes/auth";
 import BlogRoutes from "./routes/blog";
+import BlogMiddleware from "./middlewares/BlogMiddleware";
+import AuthMiddleware from "./middlewares/AuthMiddleware";
+import { returnErrorMessage } from "./utils/functions";
 
 dotenv.config();
 
@@ -18,7 +21,21 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use("/api/v1/auth", AuthRoutes);
-app.use("/api/v1/blog", BlogRoutes);
+app.use(
+  "/api/v1/blogs",
+  async (req, res, next) => {
+    const Auth = new AuthMiddleware(req);
+    const user = await Auth.isAuthenticatedUser();
+
+    console.log(user);
+
+    if (user == undefined)
+      return returnErrorMessage(res, { message: "you are authenticated" });
+
+    next();
+  },
+  BlogRoutes
+);
 
 app.get("/", (req: Request, res: Response) => {
   return res.status(200).json({

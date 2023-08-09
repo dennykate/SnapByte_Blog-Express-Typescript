@@ -30,7 +30,6 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const { name, email, password, password_confirmation, profile } = req.body;
         if (password != password_confirmation) {
             return (0, functions_1.returnErrorMessage)(res, { message: "passwords doesn't match" });
-            ``;
         }
         const isExistEmail = yield auth_1.default.findOne({ email });
         if (isExistEmail) {
@@ -40,6 +39,12 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             .createHash("md5")
             .update(req.body.password)
             .digest("hex");
+        console.log({
+            name,
+            email,
+            password: hashedPassword,
+            profile,
+        });
         yield auth_1.default.create({
             name,
             email,
@@ -69,7 +74,7 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             return (0, functions_1.returnErrorMessage)(res, { message: "user not found" });
         }
         jsonwebtoken_1.default.sign({
-            _id: user._id,
+            id: user._id,
             name: user.name,
             email: user.email,
             password: hashedPassword,

@@ -17,10 +17,6 @@ const AuthSchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
-    password_confirmation: {
-        type: String,
-        required: true,
-    },
     profile: {
         type: String,
         required: true,

@@ -15,11 +15,10 @@ router.post("/", [
 ], blog_1.store);
 router.get("/", blog_1.index);
 router.get("/detail/:slug", blog_1.show);
+router.get("/profile/:id", blog_1.profile);
 router.get("/related", blog_1.related);
 router.put("/:slug", blog_1.update);
 router.delete("/:slug", blog_1.destroy);
-router.post("/like", [
-    (0, express_validator_1.body)("slug").notEmpty().withMessage("slug is required"),
-    (0, express_validator_1.body)("user").notEmpty().withMessage("user is required"),
-], blog_1.like);
+router.post("/like", [(0, express_validator_1.body)("slug").notEmpty().withMessage("slug is required")], blog_1.like);
+router.post("/dislike", [(0, express_validator_1.body)("slug").notEmpty().withMessage("slug is required")], blog_1.dislike);
 exports.default = router;

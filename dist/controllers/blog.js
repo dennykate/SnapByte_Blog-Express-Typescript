@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.like = exports.related = exports.destroy = exports.update = exports.show = exports.index = exports.store = void 0;
+exports.profile = exports.dislike = exports.like = exports.related = exports.destroy = exports.update = exports.show = exports.index = exports.store = void 0;
 const express_validator_1 = require("express-validator");
 const blog_1 = __importDefault(require("../models/blog"));
 const functions_1 = require("../utils/functions");
@@ -50,7 +50,7 @@ const index = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const options = req.query;
     const filter = options.filter || {};
     const page = options.page || 1;
-    const limit = 10;
+    const limit = 9;
     const skip = (page - 1) * limit;
     const search = options.search || "";
     try {
@@ -99,6 +99,7 @@ const index = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
+        console.log(error);
         return (0, functions_1.returnErrorMessage)(res, { message: "server error" }, 500);
     }
 });
@@ -138,10 +139,17 @@ const update = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.update = update;
 const destroy = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const slug = req.params.slug;
     const isExistedBlog = yield blog_1.default.findOne({ slug });
     if (!isExistedBlog) {
         return (0, functions_1.returnErrorMessage)(res, { message: "not found" }, 400);
+    }
+    const Auth = new AuthMiddleware_1.default(req);
+    const user = yield Auth.isAuthenticatedUser();
+    const isAuthorizedUser = Auth.isAuthorizedUser((_a = isExistedBlog.upload_by) === null || _a === void 0 ? void 0 : _a.id);
+    if (!isAuthorizedUser) {
+        return (0, functions_1.returnErrorMessage)(res, { message: "you're unauthorized" }, 400);
     }
     try {
         yield blog_1.default.findOneAndDelete({ slug });
@@ -172,7 +180,8 @@ const like = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return (0, functions_1.returnErrorMessage)(res, { message: "blog not found" }, 400);
     }
     try {
-        const likes = blog.likes ? [...blog.likes, user._id] : [];
+        const likes = blog.likes ? [...blog.likes, user.id] : [];
+        console.log(likes);
         yield blog_1.default.findOneAndUpdate({ slug }, {
             likes,
         }, { new: true });
@@ -183,3 +192,52 @@ const like = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.like = like;
+const dislike = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b;
+    const { slug } = req.body;
+    const Auth = new AuthMiddleware_1.default(req);
+    const user = yield Auth.isAuthenticatedUser();
+    const blog = yield blog_1.default.findOne({ slug });
+    if (!blog) {
+        return (0, functions_1.returnErrorMessage)(res, { message: "blog not found" }, 400);
+    }
+    try {
+        const likes = blog.likes
+            ? (_b = blog.likes) === null || _b === void 0 ? void 0 : _b.filter((like) => like.toString() != user.id)
+            : [];
+        yield blog_1.default.findOneAndUpdate({ slug }, {
+            likes,
+        }, { new: true });
+        return (0, functions_1.returnSuccessMessage)(res, { message: "blog is successfully disliked" }, 201);
+    }
+    catch (error) {
+        return (0, functions_1.returnErrorMessage)(res, { message: "fail to like" });
+    }
+});
+exports.dislike = dislike;
+const profile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.params.id;
+    const options = req.query;
+    const page = options.page || 1;
+    const limit = 9;
+    const skip = (page - 1) * limit;
+    try {
+        const totalBlogs = yield blog_1.default.find({
+            "upload_by.id": id,
+        });
+        const blogs = yield blog_1.default.find({
+            "upload_by.id": id,
+        })
+            .skip(skip)
+            .limit(limit);
+        const blogResource = new blog_resource_1.default({}, req);
+        return (0, functions_1.returnSuccessMessage)(res, {
+            meta: { total: totalBlogs.length, page, limit, skip },
+            data: blogResource.all(blogs),
+        });
+    }
+    catch (error) {
+        return (0, functions_1.returnErrorMessage)(res, { message: "server error" }, 500);
+    }
+});
+exports.profile = profile;

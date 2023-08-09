@@ -5,6 +5,7 @@ export interface UploadByProps {
   name: string;
   email: string;
   profile: string;
+  id: string;
 }
 
 export interface BlogProps {
@@ -28,7 +29,7 @@ export interface ResponseBlogProps {
 }
 
 export interface ResponseUserProps {
-  _id?: ObjectId;
+  id?: string;
   name?: string;
   email?: string;
   password?: string;
