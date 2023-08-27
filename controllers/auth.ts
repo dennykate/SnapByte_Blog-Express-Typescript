@@ -36,13 +36,6 @@ export const register = async (req: Request, res: Response) => {
       .update(req.body.password)
       .digest("hex");
 
-    console.log({
-      name,
-      email,
-      password: hashedPassword,
-      profile,
-    });
-
     await Auth.create({
       name,
       email,

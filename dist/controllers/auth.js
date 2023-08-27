@@ -39,12 +39,6 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             .createHash("md5")
             .update(req.body.password)
             .digest("hex");
-        console.log({
-            name,
-            email,
-            password: hashedPassword,
-            profile,
-        });
         yield auth_1.default.create({
             name,
             email,

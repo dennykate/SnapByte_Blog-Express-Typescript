@@ -100,8 +100,6 @@ export const index = async (req: Request, res: Response) => {
       data: blogResource.all(blogs),
     });
   } catch (error) {
-    console.log(error);
-
     return returnErrorMessage(res, { message: "server error" }, 500);
   }
 };
@@ -198,7 +196,6 @@ export const like = async (req: Request, res: Response) => {
 
   try {
     const likes = blog.likes ? [...blog.likes, user.id] : [];
-    console.log(likes);
 
     await Blog.findOneAndUpdate(
       { slug },

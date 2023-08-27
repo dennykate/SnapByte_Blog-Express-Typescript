@@ -27,7 +27,6 @@ app.use(
     const Auth = new AuthMiddleware(req);
     const user = await Auth.isAuthenticatedUser();
 
-    console.log(user);
 
     if (user == undefined)
       return returnErrorMessage(res, { message: "you are authenticated" });

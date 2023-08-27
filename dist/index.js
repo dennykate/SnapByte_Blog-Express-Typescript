@@ -32,7 +32,6 @@ app.use("/api/v1/auth", auth_1.default);
 app.use("/api/v1/blogs", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const Auth = new AuthMiddleware_1.default(req);
     const user = yield Auth.isAuthenticatedUser();
-    console.log(user);
     if (user == undefined)
         return (0, functions_1.returnErrorMessage)(res, { message: "you are authenticated" });
     next();

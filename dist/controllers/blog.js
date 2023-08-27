@@ -99,7 +99,6 @@ const index = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        console.log(error);
         return (0, functions_1.returnErrorMessage)(res, { message: "server error" }, 500);
     }
 });
@@ -181,7 +180,6 @@ const like = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     try {
         const likes = blog.likes ? [...blog.likes, user.id] : [];
-        console.log(likes);
         yield blog_1.default.findOneAndUpdate({ slug }, {
             likes,
         }, { new: true });
